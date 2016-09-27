@@ -14,7 +14,8 @@
         if (newSearch !== '' & newSearch !== '?') {
           newSearch += '&';
         }
-        newSearch += 'username=' + (prompt('What is your name?') || 'anonymous');
+        var user = prompt(('What is your name?') || 'anonymous');
+        newSearch += 'username=' + user;
         window.location.search = newSearch;
       }
     </script>

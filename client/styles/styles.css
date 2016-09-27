@@ -95,8 +95,9 @@ form input[type=text] {
     height: 300px; 
     padding: .5em;
     margin: .5em;
+    position: absolute;
     /*overflow: scroll;*/
-    border-radius: 2em;    
+    border-radius: 2em;   
 }
 
 .newRoomButton {
@@ -125,6 +126,7 @@ form input[type=text] {
     display:inline-block;
     height: 50px;
     width: 240px;
+    overflow: auto;
 }
 .messages{
     overflow:scroll;
@@ -142,4 +144,7 @@ form input[type=text] {
     position:absolute;
     left:20px;
     color:#fff;
+}
+textarea{
+    resize:none;
 }
