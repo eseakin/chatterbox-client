@@ -18,15 +18,36 @@
         window.location.search = newSearch;
       }
     </script>
-    <!-- your scripts -->
+   
+    <!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script> -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="env/config.js"></script>
     <script src="scripts/app.js"></script>
+    <script>
+      $( function() {
+        $( '.chatbox' ).draggable();
+      } );
+    </script>
   </head>
   <body>
     <div id="main">
       <h1>chatterbox</h1>
+      <button class='newRoomButton'>Add New Room!</button>
+      <script>
+
+      </script>
+      <!-- <div class='chatbox'><p>hi this is a draggable box</p></div> -->
       <!-- Your HTML goes here! -->
     </div>
     <div id="chats"></div>
+
   </body>
 </html>
+
+
+
+
+
+
+
+
