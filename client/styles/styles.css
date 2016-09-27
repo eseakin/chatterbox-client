@@ -136,5 +136,10 @@ form input[type=text] {
     position:absolute;
     left:290px;
     cursor: pointer;
+    color:#fff;
 }
-
+.roomname {
+    position:absolute;
+    left:20px;
+    color:#fff;
+}
