@@ -157,6 +157,7 @@ textarea{
     resize:none;
 }
 
-div[id='the box']{
-background-color:black !important;
+.friend {
+    font-weight: bold;
 }
+

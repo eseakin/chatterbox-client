@@ -5,19 +5,25 @@ class App {
     this.oldMessagesEnd;
     this.index = 99;
     this.boxCount = 1;
+    this.username = 'Maverick';
     this.init();
     this.zCount = 1;
     this.initFlag = false;
     this.roomname;
+    this.friends = [];
     console.log('constructor');
   }
 
   init() {
-    this.fetch();
-    $('.newRoomButton').on('click', () => {
-      this.renderRoom();
+    $('body').on('click', '.newRoomButton', () => {
+      var name = prompt('What do you want to name your room?' || 'default');
+      // console.log('button clicked');
+
+
+      this.renderRoom(name);
     });
     
+    this.fetch();
     console.log('init');
     setInterval( ()=>{
       this.fetch();
@@ -105,17 +111,22 @@ class App {
       }
 
       ele.roomname = ele.roomname.replace(/\s+/g, '_');
-      // if (!ele.text || example.indexOf(ele.text[0].toLowerCase()) === -1) {
-      //   // console.log(ele.text);
-      //   ele.text = 'Nice Try';
-      // }
+      ele.username = ele.username.replace(/\s+/g, '_');
 
-      // if (!document.getElementById(ele.roomname)) {
-        // console.log('creating room', ele.roomname);
       this.renderRoom(ele.roomname);
       
-      $('#'+ele.roomname + ' .messages').append('<p></p>');
-      $('#'+ele.roomname + ' .messages p').last().text(ele.username + ': ' + ele.text);
+      $('#'+ele.roomname + ' .messages').append('<p><span class="username" data-username=\"' + ele.username + '\" /><span class="message" /></p>');
+      // $('#'+ele.roomname + ' .messages .username').last().text(ele.username);
+
+      if (this.friends.indexOf(ele.username) !== -1) {
+        $('#'+ele.roomname + ' .messages .username').last().text(ele.username);
+        $('#'+ele.roomname + ' .messages .username').last().addClass('friend')
+      } else {
+        $('#'+ele.roomname + ' .messages .username').last().text(ele.username);
+      }
+
+      $('#'+ele.roomname + ' .messages  .message').last().text(': ' + ele.text);
+
       // console.log('message rendered to ', ele.roomname)
     }
   }
@@ -129,19 +140,25 @@ class App {
     //remove spaces
     roomname = roomname.replace(/\s+/g, '_');
     // roomname = roomname.replace(/"/g, '\\\"');
+
+    var $roomname = document.getElementById(roomname);
+    console.log('$roomname', $roomname)
     
     if (document.getElementById(roomname)) {
-      console.log('room exists, returning')
+      console.log('room exists')
+      if ($($roomname).is(':hidden')) {
+        $($roomname).slideDown();
+      }
       return;
     }
 
     console.log('room does not exist, creating')
-    // if (document.getElementById(roomname)) {
-    //   alert('Room already exists');
-    //   var roomname = prompt('Name Your Room');
-    //   this.renderRoom(roomname);
-    //   return;
-    // }
+    if (document.getElementById(roomname)) {
+      alert('Room already exists');
+      var roomname = prompt('Name Your Room');
+      this.renderRoom(roomname);
+      return;
+    }
 
     $('#main').append('<div class="chatbox" id=\"' + roomname + '\"></div>');
     $('#'+roomname).append('<div class="closeWindow">X</div>');
@@ -164,11 +181,40 @@ class App {
       $('#' + roomname).css('z-index', this.zCount);
       this.zCount++;
     });
+
+    //friends list click handler
+    $('#'+roomname).on('click', '.username', (event) => {
+      // console.log($(event.target));
+      var friendIndex = this.friends.indexOf($(event.target).text());
+      var friend = $(event.target).text();
+      console.log('my friend is ', friend)
+      if (friendIndex === -1) {
+        this.friends.push(friend);
+      } else {
+        this.friends.splice(friendIndex, 1);
+      }
+
+      $('.username[data-username=\"'+friend+'\"]').each(function(){
+        $(this).toggleClass('friend');
+      });
+
+      console.log('friends toggled');
+    });
     
     $('#'+roomname).on('click', '.sendButton',(event) => {
+      var username = '';
+
+      var string = window.location.search;
+
+      var userIndex = string.indexOf('username=');
+      this.username = string.slice(userIndex + 9)
+      console.log('new user', this.username)
+
+
+
       var message = {};
       message.text = $(event.target).siblings('.messageType').val();
-      message.username = 'Maverick';
+      message.username = this.username;
       message.roomname = $(event.target).parent().attr('id');
       $(event.target).siblings('.messageType').val('');
       console.log('sending this ', message);
@@ -177,26 +223,27 @@ class App {
     });    
 
     $('.closeWindow').on('click', (event) => {
-      $(event.target).parent().remove();
+      $(event.target).parent().slideUp();
       //Fade Out
       // setTimer(function() {
       //   $(event.target).parent().remove();
       // }.bind(this), 1000);
     });
     console.log('renderRoom');
+
+    // if(this.messages.results)
   }
 
   randomNum(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
   }
 
+  //we could add data from the beginning and select everything with that data... toggle friend class.
 }
 
-// $(document).ready( () => {
-var app = new App('https://api.parse.com/1/classes/messages');
-// });
-
-
+$(document).ready( () => {
+  var app = new App('https://api.parse.com/1/classes/messages');
+});
 
 
 
