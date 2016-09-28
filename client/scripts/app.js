@@ -2,10 +2,12 @@ class App {
   constructor(server) {
     this.server = server;
     this.messages = {};
-    this.index = 0;
+    this.oldMessagesEnd;
+    this.index = 99;
     this.boxCount = 1;
     this.init();
     this.zCount = 1;
+    this.initFlag = false;
     this.roomname;
     console.log('constructor');
   }
@@ -17,6 +19,9 @@ class App {
     });
     
     console.log('init');
+    setInterval( ()=>{
+      this.fetch();
+    }, 5000);
   }
 
   send(message) {
@@ -27,10 +32,11 @@ class App {
       type: 'POST',
       data: JSON.stringify(message),
       contentType: 'application/json',
-      success: function (data) {
+      success: (data) => {
         console.log('chatterbox: Message sent', data);
+        this.fetch();
       },
-      error: function (data) {
+      error: (data) => {
         // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
         console.error('chatterbox: Failed to send message', data);
       }
@@ -38,25 +44,40 @@ class App {
   }
 
   fetch() {
-    setInterval( ()=>{
-      $.ajax({
-        // This is the url you should use to communicate with the parse API server.
-        url: 'https://api.parse.com/1/classes/messages',
-        type: 'GET',
-        contentType: 'application/json',
-        data: 'order=-createdAt',
-        success: (data) => {
-          this.messages = data;
-          console.log('data', this.messages);
-          this.renderMessage();
-          console.log('chatterbox: messages pulled');
-        },
-        error: (data) => {
-          // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
-          console.error('chatterbox: Failed to pull message', data);
+    $.ajax({
+      // This is the url you should use to communicate with the parse API server.
+      url: 'https://api.parse.com/1/classes/messages',
+      type: 'GET',
+      contentType: 'application/json',
+      data: 'order=-createdAt',
+      success: (data) => {
+        if (this.initFlag) {
+          this.oldMessagesEnd = this.messages.results[0].objectId;
+          // console.log('old message id', this.oldMessagesEnd);
         }
-      });
-    }, 2000);
+        this.messages = data;
+        
+        if (!this.initFlag) {
+          this.initFlag = true;
+        }
+
+        for (var i = 0; i < this.messages.results.length; i++) {
+          if (this.oldMessagesEnd === this.messages.results[i].objectId) {
+            this.index = i - 1;
+            // console.log('found id match', i);
+            break;
+          }
+        }
+
+        // console.log('data', this.messages);
+        this.renderMessage();
+        console.log('chatterbox: messages pulled');
+      },
+      error: (data) => {
+        // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
+        console.error('chatterbox: Failed to pull message', data);
+      }
+    });
   }
 
   clearMessages() {
@@ -67,107 +88,102 @@ class App {
   renderMessage() {
     var i = this.index;
     // console.log(this.messages.results);
-    for (i; i < this.messages.results.length; i++) {
+    for (i; i >= 0; i--) {
       var ele = this.messages.results[i];
-      this.index++;
+      // console.log('this.index', this.index);
+      this.index--;
 
       var example = 'abcdefghijklmnopqrstuvwxyz0123456789';
-
-      if (!ele.username || example.indexOf(ele.username[0].toLowerCase()) === -1) {
+      // if (!ele.username || example.indexOf(ele.username[0].toLowerCase()) === -1) {
         // console.log(ele.username);
+      if (!ele.username) {
         ele.username = 'anonymous';
       }
-      if (!ele.roomname || example.indexOf(ele.roomname[0].toLowerCase()) === -1) {
+      if (!ele.roomname || example.indexOf(ele.roomname[0].toLowerCase()) === -1 || ele.roomname === null) {
         // console.log(ele.roomname);
         ele.roomname = 'default';
       }
 
-      if (!ele.text || example.indexOf(ele.text[0].toLowerCase()) === -1) {
-        // console.log(ele.text);
-        ele.text = 'Nice Try';
-      }
+      ele.roomname = ele.roomname.replace(/\s+/g, '_');
+      // if (!ele.text || example.indexOf(ele.text[0].toLowerCase()) === -1) {
+      //   // console.log(ele.text);
+      //   ele.text = 'Nice Try';
+      // }
 
-      if (!document.getElementById(ele.roomname)) {
-        console.log('creating room', ele.roomname);
-        this.renderRoom(ele.roomname);
-      }
-      $('div[id=\"'+ele.roomname+'\"]' + ' .messages').append('<p></p>')
-      $('div[id=\"'+ele.roomname+'\"]' + ' .messages p').last().text(ele.username + ': ' + ele.text);
+      // if (!document.getElementById(ele.roomname)) {
+        // console.log('creating room', ele.roomname);
+      this.renderRoom(ele.roomname);
+      
+      $('#'+ele.roomname + ' .messages').append('<p></p>');
+      $('#'+ele.roomname + ' .messages p').last().text(ele.username + ': ' + ele.text);
+      // console.log('message rendered to ', ele.roomname)
     }
   }
 
-  renderRoom(roomname, x, y) {
-    roomname = roomname || prompt('Name Your Room');
+  renderRoom(roomname) {
+    roomname = roomname || 'default';
 
     if (roomname === null) {
       return;
     }
     //remove spaces
-    // roomname = roomname.replace(/\s+/g, '_');
+    roomname = roomname.replace(/\s+/g, '_');
     // roomname = roomname.replace(/"/g, '\\\"');
     
     if (document.getElementById(roomname)) {
-      alert('Room already exists');
-      var roomname = prompt('Name Your Room');
-      this.renderRoom(roomname);
+      console.log('room exists, returning')
       return;
     }
 
-    $('#main').append('<div class="chatbox" id=\"'+roomname+'\"></div>');
-    $('div[id=\"'+roomname+'\"]').append('<div class="closeWindow">X</div>');
-    $('div[id=\"'+roomname+'\"]').append('<div class="roomname"></div>');
-    $('div[id=\"'+roomname+'\"] .roomname').text(roomname);
-    $('div[id=\"'+roomname+'\"]').append('<div class="messages"></div>');
-    $('div[id=\"'+roomname+'\"]').append('<textarea class="messageType"></textarea>');
-    $('div[id=\"'+roomname+'\"]').append('<div class="sendButton">Send</div>');
+    console.log('room does not exist, creating')
+    // if (document.getElementById(roomname)) {
+    //   alert('Room already exists');
+    //   var roomname = prompt('Name Your Room');
+    //   this.renderRoom(roomname);
+    //   return;
+    // }
 
-    $('div[id=\"'+roomname+'\"]').css('top', this.randomNum(0,window.innerHeight - 300) + 'px');
-    $('div[id=\"'+roomname+'\"]').css('left', this.randomNum(0,window.innerWidth - 300) + 'px');
-    $('div[id=\"'+roomname+'\"]').css('background-color', 'rgb(' + this.randomNum(0,200) + ',' + this.randomNum(0,200) + ',' + this.randomNum(0,200) + ')');
+    $('#main').append('<div class="chatbox" id=\"' + roomname + '\"></div>');
+    $('#'+roomname).append('<div class="closeWindow">X</div>');
+    $('#'+roomname).append('<div class="roomname"></div>');
+    $('#'+roomname + ' .roomname').text(roomname);
+    $('#'+roomname).append('<div class="messages"></div>');
+    $('#'+roomname).append('<textarea class="messageType"></textarea>');
+    $('#'+roomname).append('<div class="sendButton">Send</div>');
+
+    $('#'+roomname).css('top', this.randomNum(0, window.innerHeight - 300) + 'px');
+    $('#'+roomname).css('left', this.randomNum(0, window.innerWidth - 300) + 'px');
+    $('#'+roomname).css('background-color', 'rgb(' + this.randomNum(0, 200) + ',' + this.randomNum(0, 200) + ',' + this.randomNum(0, 200) + ')');
 
     
-    $(() => {
-      $('div[id=\"'+roomname+'\"]').draggable();
-    });
-
-    $('div[id=\"'+roomname+'\"]').on('click', (event) => {
+    
+    $('#' + roomname).draggable();
+    
+    $('#' + roomname).on('click', (event) => {
       // console.log($(event.target));
-      $('div[id=\"'+roomname+'\"]').css('z-index', this.zCount);
+      $('#' + roomname).css('z-index', this.zCount);
       this.zCount++;
     });
     
-    $('.sendButton').on('click', (event) => {
+    $('#'+roomname).on('click', '.sendButton',(event) => {
       var message = {};
-      // message.username = 'joker';
-      // message.roomname = 'jokerface';
-      // message.text = 'lasers pew pew';
-      // console.log('clicked send on ',$(event.target).parent().attr('id'));
       message.text = $(event.target).siblings('.messageType').val();
-      message.username = 'joker';
+      message.username = 'Maverick';
       message.roomname = $(event.target).parent().attr('id');
       $(event.target).siblings('.messageType').val('');
-      // console.log('sending this ',message)
+      console.log('sending this ', message);
       this.send(message);
       console.log('sendButton');
     });    
 
     $('.closeWindow').on('click', (event) => {
       $(event.target).parent().remove();
-      //MAKE THIS WORRRRRK
+      //Fade Out
       // setTimer(function() {
       //   $(event.target).parent().remove();
       // }.bind(this), 1000);
     });
     console.log('renderRoom');
-  }
-
-  handleUsernameClick() {
-    console.log('handleUsernameClick');
-  }
-
-  addRoom(roomName) {
-
-    console.log('addRoom');
   }
 
   randomNum(min, max) {
@@ -176,9 +192,9 @@ class App {
 
 }
 
-$(document).ready( () => {
+// $(document).ready( () => {
 var app = new App('https://api.parse.com/1/classes/messages');
-});
+// });
 
 
 

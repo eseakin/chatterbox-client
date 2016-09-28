@@ -97,7 +97,8 @@ form input[type=text] {
     margin: .5em;
     position: absolute;
     /*overflow: scroll;*/
-    border-radius: 2em 2em 2em 0;   
+    border-radius: 2em 2em 2em 0;  
+    opacity: .95; 
 }
 
 .newRoomButton {
